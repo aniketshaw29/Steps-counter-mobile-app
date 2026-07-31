@@ -15,8 +15,9 @@ ios/
 .env.local
 .env*.local
 
-# EAS
-.eas/
+# EAS — ignore local cache, track workflows
+.eas/build/
+.eas/credentials/
 
 # macOS
 .DS_Store

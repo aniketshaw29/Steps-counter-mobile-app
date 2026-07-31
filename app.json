@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSMotionUsageDescription": "Steps Counter uses your phone's motion sensor to count steps. Your data never leaves your device.",
         "NSHealthShareUsageDescription": "Steps Counter reads your step data from Apple Health.",
-        "NSHealthUpdateUsageDescription": "Steps Counter writes your step data to Apple Health."
+        "NSHealthUpdateUsageDescription": "Steps Counter writes your step data to Apple Health.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -44,7 +45,9 @@
       "expo-sqlite",
       [
         "expo-router",
-        { "root": "app" }
+        {
+          "root": "app"
+        }
       ],
       [
         "expo-notifications",
