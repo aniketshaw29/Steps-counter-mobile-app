@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../src/stores/settingsStore';
 import { useTodayStore } from '../src/stores/todayStore';
 import { startStepCounting, stopStepCounting } from '../src/services/StepService';
-import { recalculateStreak, getSetting, setSetting } from '../src/db/database';
+import { registerBackgroundStepTask } from '../src/services/BackgroundStepService';
+import { recalculateStreak, getSetting } from '../src/db/database';
 
 export default function RootLayout() {
   const loadSettings = useSettingsStore((s) => s.load);
@@ -25,6 +26,7 @@ export default function RootLayout() {
         const streak = await recalculateStreak();
         setStreakCount(streak);
         await startStepCounting();
+        await registerBackgroundStepTask();
       }
     })();
 

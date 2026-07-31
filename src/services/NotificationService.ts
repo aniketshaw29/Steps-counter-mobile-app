@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -17,9 +16,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 export async function scheduleGoalReminder(hourHH: number, minuteMM: number): Promise<void> {
-  // Cancel any existing daily reminder before scheduling a new one
   await cancelGoalReminder();
-
   await Notifications.scheduleNotificationAsync({
     identifier: 'daily-reminder',
     content: {
@@ -36,7 +33,7 @@ export async function scheduleGoalReminder(hourHH: number, minuteMM: number): Pr
 }
 
 export async function cancelGoalReminder(): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync('daily-reminder');
+  await Notifications.cancelScheduledNotificationAsync('daily-reminder').catch(() => {});
 }
 
 export async function sendGoalReachedNotification(steps: number): Promise<void> {
@@ -47,7 +44,7 @@ export async function sendGoalReachedNotification(steps: number): Promise<void> 
       body: `You've walked ${steps.toLocaleString()} steps today. Amazing!`,
       sound: true,
     },
-    trigger: null, // fire immediately
+    trigger: null,
   });
 }
 
@@ -60,5 +57,45 @@ export async function sendStreakNotification(streak: number): Promise<void> {
       sound: true,
     },
     trigger: null,
+  });
+}
+
+// Schedule an inactivity nudge: fires N minutes from now if steps haven't updated
+export async function scheduleInactivityNudge(delayMinutes = 120): Promise<void> {
+  await cancelInactivityNudge();
+  await Notifications.scheduleNotificationAsync({
+    identifier: 'inactivity-nudge',
+    content: {
+      title: "Time to get up! 🧍",
+      body: "You've been sitting for a while. Even a short walk helps.",
+      sound: true,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: delayMinutes * 60,
+      repeats: false,
+    },
+  });
+}
+
+export async function cancelInactivityNudge(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync('inactivity-nudge').catch(() => {});
+}
+
+export async function scheduleWeeklySummary(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync('weekly-summary').catch(() => {});
+  await Notifications.scheduleNotificationAsync({
+    identifier: 'weekly-summary',
+    content: {
+      title: "Weekly summary 📊",
+      body: "Check how many steps you walked this week!",
+      sound: true,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: 1,   // Sunday (1 = Sunday in Expo's system)
+      hour: 20,
+      minute: 0,
+    },
   });
 }
