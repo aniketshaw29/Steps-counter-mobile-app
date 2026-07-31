@@ -69,8 +69,8 @@ export default function SettingsScreen() {
     await scheduleGoalReminder(h, m);
   };
 
-  const card = [styles.card, { backgroundColor: C.surfaceVariant }] as const;
-  const sectionTitle = [styles.sectionTitle, { color: C.onSurfaceVariant }] as const;
+  const card: object[] = [styles.card, { backgroundColor: C.surfaceVariant }];
+  const sectionTitle: object[] = [styles.sectionTitle, { color: C.onSurfaceVariant }];
 
   return (
     <ScrollView style={[styles.scroll, { backgroundColor: C.background }]} contentContainerStyle={styles.content}>
