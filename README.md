@@ -117,9 +117,12 @@ npm test
 | [PLAN.md](PLAN.md) | Full roadmap, milestones, free resources |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Screen flow, data flow, component design, key decisions |
 | [DATABASE.md](DATABASE.md) | SQLite schema, all queries, step calculation formulas |
-| [TESTING.md](TESTING.md) | How to test on USB + Expo Go, per-feature checklist |
-| [TESTING_STRATEGY.md](TESTING_STRATEGY.md) | Unit tests plan + Postman collection usage |
+| [USB_SETUP.md](USB_SETUP.md) | **How to connect your Android phone via USB cable on Mac** |
+| [DEVICE_TESTING.md](DEVICE_TESTING.md) | **Running tests with USB phone + Claude automation** |
+| [TESTING.md](TESTING.md) | Expo Go QR testing guide + per-feature checklist |
+| [TESTING_STRATEGY.md](TESTING_STRATEGY.md) | Unit test plan + Postman collection usage |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | 100% free build & deploy plan (EAS Build + Play Store) |
+| [PLAY_STORE.md](PLAY_STORE.md) | Play Store listing guide, privacy policy template |
 
 ---
 
