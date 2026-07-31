@@ -27,4 +27,12 @@ export const MIGRATIONS = [
         ('onboarding_complete', 'false');
     `,
   },
+  {
+    version: 2,
+    sql: `
+      INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('personal_best_steps', '0'),
+        ('personal_best_date',  '');
+    `,
+  },
 ];

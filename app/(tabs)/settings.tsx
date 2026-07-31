@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, Switch, Alert,
+  TouchableOpacity, Switch, Alert, ActivityIndicator,
 } from 'react-native';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTodayStore } from '../../src/stores/todayStore';
 import { scheduleGoalReminder, cancelGoalReminder } from '../../src/services/NotificationService';
+import { exportStepsCSV } from '../../src/services/ExportService';
 import { useColors } from '../../src/theme/useColors';
 import { Spacing, FontSize, Radius } from '../../src/theme';
 
@@ -21,6 +22,7 @@ export default function SettingsScreen() {
   const [reminderOn, setReminderOn] = useState(false);
   const [reminderHour, setReminderHour] = useState('20');
   const [reminderMin, setReminderMin] = useState('00');
+  const [exporting, setExporting] = useState(false);
 
   const presets = [5000, 8000, 10000, 15000];
 
@@ -32,6 +34,17 @@ export default function SettingsScreen() {
     }
     await setDailyGoal(n);
     setGoalInStore(n);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportStepsCSV();
+    } catch (e: any) {
+      Alert.alert('Export failed', e?.message ?? 'Could not export data.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleReminderToggle = async (val: boolean) => {
@@ -151,6 +164,24 @@ export default function SettingsScreen() {
           Your data stays on your device. No account required.
         </Text>
       </View>
+
+      {/* Data */}
+      <Text style={sectionTitle}>Data</Text>
+      <View style={card}>
+        <TouchableOpacity
+          style={[styles.exportBtn, { backgroundColor: C.primaryContainer }]}
+          onPress={handleExport}
+          disabled={exporting}
+        >
+          {exporting
+            ? <ActivityIndicator color={C.primary} />
+            : <Text style={[styles.exportBtnText, { color: C.primary }]}>📤 Export steps as CSV</Text>
+          }
+        </TouchableOpacity>
+        <Text style={[styles.aboutSub, { color: C.onSurfaceVariant, marginTop: Spacing.sm }]}>
+          Saves all history to a CSV file you can open in Excel or Google Sheets.
+        </Text>
+      </View>
     </ScrollView>
   );
 }
@@ -174,4 +205,6 @@ const styles = StyleSheet.create({
   timeSep: { fontSize: FontSize.lg, fontWeight: '700' },
   aboutText: { fontSize: FontSize.md, fontWeight: '600' },
   aboutSub: { fontSize: FontSize.sm, marginTop: 4 },
+  exportBtn: { borderRadius: Radius.sm, padding: Spacing.md, alignItems: 'center' },
+  exportBtnText: { fontWeight: '700', fontSize: FontSize.md },
 });
