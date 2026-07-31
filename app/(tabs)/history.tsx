@@ -1,140 +1,116 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { StepBarChart } from '../../src/components/StepBarChart';
+import { CalendarHeatmap } from '../../src/components/CalendarHeatmap';
 import { getLast7Days, DailyRecord } from '../../src/db/database';
 import { useSettingsStore } from '../../src/stores/settingsStore';
-import { Colors, Spacing, FontSize, Radius } from '../../src/theme';
+import { useColors } from '../../src/theme/useColors';
+import { Spacing, FontSize, Radius } from '../../src/theme';
 import { shortDayLabel } from '../../src/utils/dateHelpers';
 import { metersToKm, metersToMiles } from '../../src/utils/calculations';
 
+type View2 = 'week' | 'month';
+
 export default function HistoryScreen() {
+  const C = useColors();
   const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [view, setView] = useState<View2>('week');
   const goal = useSettingsStore((s) => s.dailyGoal);
   const unit = useSettingsStore((s) => s.unit);
   const streak = useSettingsStore((s) => s.streakCount);
 
-  useEffect(() => {
-    getLast7Days().then(setRecords);
-  }, []);
+  useEffect(() => { getLast7Days().then(setRecords); }, []);
 
-  const totalSteps = records.reduce((sum, r) => sum + r.steps, 0);
+  const totalSteps = records.reduce((s, r) => s + r.steps, 0);
   const avgSteps = records.length ? Math.round(totalSteps / records.length) : 0;
   const daysGoalMet = records.filter((r) => r.goal_met === 1).length;
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Weekly summary */}
+    <ScrollView style={[styles.scroll, { backgroundColor: C.background }]} contentContainerStyle={styles.content}>
+      {/* Summary cards */}
       <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{avgSteps.toLocaleString()}</Text>
-          <Text style={styles.summaryLabel}>Avg / day</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{daysGoalMet}/7</Text>
-          <Text style={styles.summaryLabel}>Goals met</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{streak}</Text>
-          <Text style={styles.summaryLabel}>Day streak</Text>
-        </View>
+        {[
+          { value: avgSteps.toLocaleString(), label: 'Avg / day' },
+          { value: `${daysGoalMet}/7`, label: 'Goals met' },
+          { value: String(streak), label: 'Day streak' },
+        ].map((item) => (
+          <View key={item.label} style={[styles.summaryCard, { backgroundColor: C.surfaceVariant }]}>
+            <Text style={[styles.summaryValue, { color: C.onSurface }]}>{item.value}</Text>
+            <Text style={[styles.summaryLabel, { color: C.onSurfaceVariant }]}>{item.label}</Text>
+          </View>
+        ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Last 7 Days</Text>
-      <StepBarChart data={records} goal={goal} />
+      {/* View toggle */}
+      <View style={[styles.toggle, { backgroundColor: C.surfaceVariant }]}>
+        {(['week', 'month'] as const).map((v) => (
+          <TouchableOpacity
+            key={v}
+            style={[styles.toggleBtn, view === v && { backgroundColor: C.primary }]}
+            onPress={() => setView(v)}
+          >
+            <Text style={[styles.toggleText, { color: view === v ? C.onPrimary : C.onSurfaceVariant }]}>
+              {v === 'week' ? '7 Days' : 'Month'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      {/* Day list */}
-      <View style={styles.list}>
-        {[...records].reverse().map((record) => {
-          const dist =
-            unit === 'metric'
-              ? `${metersToKm(record.distance_m)} km`
-              : `${metersToMiles(record.distance_m)} mi`;
-          return (
-            <View key={record.date} style={styles.dayRow}>
-              <View>
-                <Text style={styles.dayDate}>{record.date}</Text>
-                <Text style={styles.dayDay}>{shortDayLabel(record.date)}</Text>
-              </View>
-              <View style={styles.dayRight}>
-                <Text style={styles.daySteps}>{record.steps.toLocaleString()}</Text>
-                <Text style={styles.dayDist}>{dist}</Text>
-              </View>
-              {record.goal_met === 1 && (
-                <View style={styles.goalBadge}>
-                  <Text style={styles.goalBadgeText}>✓</Text>
+      {view === 'week' ? (
+        <>
+          <Text style={[styles.sectionTitle, { color: C.onBackground }]}>Last 7 Days</Text>
+          <StepBarChart data={records} goal={goal} />
+          <View style={[styles.list, { gap: Spacing.sm }]}>
+            {[...records].reverse().map((r) => {
+              const dist = unit === 'metric' ? `${metersToKm(r.distance_m)} km` : `${metersToMiles(r.distance_m)} mi`;
+              return (
+                <View key={r.date} style={[styles.dayRow, { backgroundColor: C.surfaceVariant }]}>
+                  <View>
+                    <Text style={[styles.dayDay, { color: C.onSurface }]}>{shortDayLabel(r.date)}</Text>
+                    <Text style={[styles.dayDate, { color: C.onSurfaceVariant }]}>{r.date}</Text>
+                  </View>
+                  <View style={styles.dayRight}>
+                    <Text style={[styles.daySteps, { color: C.primary }]}>{r.steps.toLocaleString()}</Text>
+                    <Text style={[styles.dayDist, { color: C.onSurfaceVariant }]}>{dist}</Text>
+                  </View>
+                  {r.goal_met === 1 && (
+                    <View style={[styles.goalBadge, { backgroundColor: C.primary }]}>
+                      <Text style={[styles.goalBadgeText, { color: C.onPrimary }]}>✓</Text>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-          );
-        })}
-      </View>
+              );
+            })}
+          </View>
+        </>
+      ) : (
+        <>
+          <Text style={[styles.sectionTitle, { color: C.onBackground }]}>This Month</Text>
+          <CalendarHeatmap records={records} goal={goal} />
+        </>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1 },
   content: { paddingBottom: Spacing.xxl },
-
-  summaryRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.md,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: Colors.surfaceVariant,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    alignItems: 'center',
-  },
-  summaryValue: {
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.onSurface,
-  },
-  summaryLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.onSurfaceVariant,
-    marginTop: 4,
-  },
-
-  sectionTitle: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.onBackground,
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
-
-  list: {
-    marginTop: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  dayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceVariant,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-  },
-  dayDate: { fontSize: FontSize.xs, color: Colors.onSurfaceVariant },
-  dayDay: { fontSize: FontSize.md, fontWeight: '600', color: Colors.onSurface },
+  summaryRow: { flexDirection: 'row', paddingHorizontal: Spacing.md, marginTop: Spacing.lg, marginBottom: Spacing.md, gap: Spacing.sm },
+  summaryCard: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center' },
+  summaryValue: { fontSize: FontSize.lg, fontWeight: '700' },
+  summaryLabel: { fontSize: FontSize.xs, marginTop: 4 },
+  toggle: { flexDirection: 'row', marginHorizontal: Spacing.lg, borderRadius: Radius.full, padding: 4, marginBottom: Spacing.md },
+  toggleBtn: { flex: 1, alignItems: 'center', paddingVertical: Spacing.sm, borderRadius: Radius.full },
+  toggleText: { fontWeight: '600', fontSize: FontSize.sm },
+  sectionTitle: { fontSize: FontSize.md, fontWeight: '700', paddingHorizontal: Spacing.lg, marginBottom: Spacing.xs },
+  list: { paddingHorizontal: Spacing.lg, marginTop: Spacing.lg },
+  dayRow: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.md, padding: Spacing.md },
+  dayDay: { fontSize: FontSize.md, fontWeight: '600' },
+  dayDate: { fontSize: FontSize.xs },
   dayRight: { marginLeft: 'auto', alignItems: 'flex-end' },
-  daySteps: { fontSize: FontSize.md, fontWeight: '700', color: Colors.primary },
-  dayDist: { fontSize: FontSize.xs, color: Colors.onSurfaceVariant },
-  goalBadge: {
-    marginLeft: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goalBadgeText: { color: Colors.onPrimary, fontSize: FontSize.xs, fontWeight: '700' },
+  daySteps: { fontSize: FontSize.md, fontWeight: '700' },
+  dayDist: { fontSize: FontSize.xs },
+  goalBadge: { marginLeft: Spacing.sm, borderRadius: Radius.full, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  goalBadgeText: { fontSize: FontSize.xs, fontWeight: '700' },
 });

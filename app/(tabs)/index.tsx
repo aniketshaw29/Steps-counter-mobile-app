@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTodayStore } from '../../src/stores/todayStore';
 import { useSettingsStore } from '../../src/stores/settingsStore';
@@ -10,10 +10,12 @@ import { StreakBadge } from '../../src/components/StreakBadge';
 import { GoalCelebration } from '../../src/components/GoalCelebration';
 import { getLast7Days, DailyRecord } from '../../src/db/database';
 import { sendGoalReachedNotification, sendStreakNotification } from '../../src/services/NotificationService';
-import { Colors, Spacing, FontSize } from '../../src/theme';
+import { useColors } from '../../src/theme/useColors';
+import { Spacing, FontSize } from '../../src/theme';
 import { metersToKm, metersToMiles } from '../../src/utils/calculations';
 
 export default function TodayScreen() {
+  const C = useColors();
   const steps = useTodayStore((s) => s.steps);
   const distanceM = useTodayStore((s) => s.distanceM);
   const calories = useTodayStore((s) => s.calories);
@@ -30,11 +32,8 @@ export default function TodayScreen() {
   const [showCelebration, setShowCelebration] = useState(false);
   const celebScale = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    getLast7Days().then(setHistory);
-  }, [steps]);
+  useEffect(() => { getLast7Days().then(setHistory); }, [steps]);
 
-  // Goal celebration — fires once per day when goal is first reached
   useEffect(() => {
     if (goalMet && !celebrationFired) {
       markCelebrationFired();
@@ -45,116 +44,62 @@ export default function TodayScreen() {
         Animated.timing(celebScale, { toValue: 1, duration: 180, useNativeDriver: true }),
       ]).start();
       sendGoalReachedNotification(steps);
-      // Fire streak notification on milestones
-      if ([3, 7, 14, 30, 60, 100].includes(streak)) {
-        sendStreakNotification(streak);
-      }
+      if ([3, 7, 14, 30, 60, 100].includes(streak)) sendStreakNotification(streak);
     }
   }, [goalMet]);
 
-  const distanceLabel =
-    unit === 'metric'
-      ? `${metersToKm(distanceM)} km`
-      : `${metersToMiles(distanceM)} mi`;
+  const distanceLabel = unit === 'metric'
+    ? `${metersToKm(distanceM)} km`
+    : `${metersToMiles(distanceM)} mi`;
 
   return (
     <>
       <ScrollView
-        style={styles.scroll}
+        style={[styles.scroll, { backgroundColor: C.background }]}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Streak badge */}
         <View style={styles.streakRow}>
           <StreakBadge count={streak} />
         </View>
 
-        {/* Progress ring + step hero */}
         <View style={styles.ringContainer}>
           <Animated.View style={{ transform: [{ scale: celebScale }] }}>
             <ProgressRing percent={percent} size={240} />
           </Animated.View>
           <View style={styles.ringCenter}>
-            <Text style={styles.stepCount}>{steps.toLocaleString()}</Text>
-            <Text style={styles.stepLabel}>steps</Text>
-            <Text style={styles.goalLabel}>
+            <Text style={[styles.stepCount, { color: C.onBackground }]}>{steps.toLocaleString()}</Text>
+            <Text style={[styles.stepLabel, { color: C.onSurfaceVariant }]}>steps</Text>
+            <Text style={[styles.goalLabel, { color: C.primary }]}>
               {goalMet ? '🎉 Goal reached!' : `Goal: ${goal.toLocaleString()}`}
             </Text>
           </View>
         </View>
 
-        {/* Metric row */}
         <View style={styles.metricRow}>
           <MetricCard label="Distance" value={distanceLabel.split(' ')[0]} unit={distanceLabel.split(' ')[1]} />
           <MetricCard label="Calories" value={String(calories)} unit="kcal" />
           <MetricCard label="Progress" value={`${percent}%`} unit="of goal" />
         </View>
 
-        {/* 7-day chart */}
-        <Text style={styles.sectionTitle}>Last 7 Days</Text>
+        <Text style={[styles.sectionTitle, { color: C.onBackground }]}>Last 7 Days</Text>
         <StepBarChart data={history} goal={goal} />
       </ScrollView>
 
-      <GoalCelebration
-        visible={showCelebration}
-        steps={steps}
-        onDone={() => setShowCelebration(false)}
-      />
+      <GoalCelebration visible={showCelebration} steps={steps} onDone={() => setShowCelebration(false)} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1 },
   content: { paddingBottom: Spacing.xxl },
-
-  streakRow: {
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.xs,
-  },
-
-  ringContainer: {
-    alignItems: 'center',
-    marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  ringCenter: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    top: 0, bottom: 0, left: 0, right: 0,
-  },
-  stepCount: {
-    fontSize: FontSize.hero,
-    fontWeight: '800',
-    color: Colors.onBackground,
-    lineHeight: FontSize.hero * 1.1,
-  },
-  stepLabel: {
-    fontSize: FontSize.md,
-    color: Colors.onSurfaceVariant,
-    marginTop: -4,
-  },
-  goalLabel: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    marginTop: Spacing.xs,
-    fontWeight: '600',
-  },
-
-  metricRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-
-  sectionTitle: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.onBackground,
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
+  streakRow: { alignItems: 'center', marginTop: Spacing.lg, marginBottom: Spacing.xs },
+  ringContainer: { alignItems: 'center', marginTop: Spacing.md, marginBottom: Spacing.lg },
+  ringCenter: { position: 'absolute', alignItems: 'center', justifyContent: 'center', top: 0, bottom: 0, left: 0, right: 0 },
+  stepCount: { fontSize: FontSize.hero, fontWeight: '800', lineHeight: FontSize.hero * 1.1 },
+  stepLabel: { fontSize: FontSize.md, marginTop: -4 },
+  goalLabel: { fontSize: FontSize.sm, marginTop: Spacing.xs, fontWeight: '600' },
+  metricRow: { flexDirection: 'row', paddingHorizontal: Spacing.md, marginBottom: Spacing.md },
+  sectionTitle: { fontSize: FontSize.md, fontWeight: '700', paddingHorizontal: Spacing.lg, marginTop: Spacing.md, marginBottom: Spacing.xs },
 });

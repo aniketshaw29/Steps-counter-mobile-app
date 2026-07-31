@@ -5,9 +5,12 @@ import {
 } from 'react-native';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { useTodayStore } from '../../src/stores/todayStore';
-import { Colors, Spacing, FontSize, Radius } from '../../src/theme';
+import { scheduleGoalReminder, cancelGoalReminder } from '../../src/services/NotificationService';
+import { useColors } from '../../src/theme/useColors';
+import { Spacing, FontSize, Radius } from '../../src/theme';
 
 export default function SettingsScreen() {
+  const C = useColors();
   const dailyGoal = useSettingsStore((s) => s.dailyGoal);
   const unit = useSettingsStore((s) => s.unit);
   const setDailyGoal = useSettingsStore((s) => s.setDailyGoal);
@@ -15,49 +18,74 @@ export default function SettingsScreen() {
   const setGoalInStore = useTodayStore((s) => s.setGoal);
 
   const [goalInput, setGoalInput] = useState(String(dailyGoal));
+  const [reminderOn, setReminderOn] = useState(false);
+  const [reminderHour, setReminderHour] = useState('20');
+  const [reminderMin, setReminderMin] = useState('00');
 
   const presets = [5000, 8000, 10000, 15000];
 
   const handleGoalSave = async () => {
     const n = parseInt(goalInput, 10);
     if (isNaN(n) || n < 100) {
-      Alert.alert('Invalid goal', 'Please enter a number of at least 100 steps.');
+      Alert.alert('Invalid goal', 'Please enter at least 100 steps.');
       return;
     }
     await setDailyGoal(n);
     setGoalInStore(n);
   };
 
+  const handleReminderToggle = async (val: boolean) => {
+    setReminderOn(val);
+    if (val) {
+      const h = parseInt(reminderHour, 10) || 20;
+      const m = parseInt(reminderMin, 10) || 0;
+      await scheduleGoalReminder(h, m);
+    } else {
+      await cancelGoalReminder();
+    }
+  };
+
+  const handleReminderTimeChange = async () => {
+    if (!reminderOn) return;
+    const h = parseInt(reminderHour, 10);
+    const m = parseInt(reminderMin, 10);
+    if (isNaN(h) || h < 0 || h > 23 || isNaN(m) || m < 0 || m > 59) {
+      Alert.alert('Invalid time', 'Enter a valid hour (0–23) and minute (0–59).');
+      return;
+    }
+    await scheduleGoalReminder(h, m);
+  };
+
+  const card = [styles.card, { backgroundColor: C.surfaceVariant }] as const;
+  const sectionTitle = [styles.sectionTitle, { color: C.onSurfaceVariant }] as const;
+
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Daily goal */}
-      <Text style={styles.sectionTitle}>Daily Step Goal</Text>
-      <View style={styles.card}>
+    <ScrollView style={[styles.scroll, { backgroundColor: C.background }]} contentContainerStyle={styles.content}>
+
+      {/* Goal */}
+      <Text style={sectionTitle}>Daily Step Goal</Text>
+      <View style={card}>
         <View style={styles.row}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: C.onSurface, borderBottomColor: C.primary }]}
             value={goalInput}
             onChangeText={setGoalInput}
             keyboardType="number-pad"
             returnKeyType="done"
             onSubmitEditing={handleGoalSave}
           />
-          <TouchableOpacity style={styles.saveBtn} onPress={handleGoalSave}>
-            <Text style={styles.saveBtnText}>Save</Text>
+          <TouchableOpacity style={[styles.saveBtn, { backgroundColor: C.primary }]} onPress={handleGoalSave}>
+            <Text style={[styles.saveBtnText, { color: C.onPrimary }]}>Save</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.presets}>
           {presets.map((p) => (
             <TouchableOpacity
               key={p}
-              style={[styles.preset, dailyGoal === p && styles.presetActive]}
-              onPress={async () => {
-                setGoalInput(String(p));
-                await setDailyGoal(p);
-                setGoalInStore(p);
-              }}
+              style={[styles.preset, { borderColor: C.outline }, dailyGoal === p && { backgroundColor: C.primaryContainer, borderColor: C.primary }]}
+              onPress={async () => { setGoalInput(String(p)); await setDailyGoal(p); setGoalInStore(p); }}
             >
-              <Text style={[styles.presetText, dailyGoal === p && styles.presetTextActive]}>
+              <Text style={[styles.presetText, { color: dailyGoal === p ? C.primary : C.onSurfaceVariant }, dailyGoal === p && { fontWeight: '700' }]}>
                 {(p / 1000).toFixed(0)}k
               </Text>
             </TouchableOpacity>
@@ -66,24 +94,60 @@ export default function SettingsScreen() {
       </View>
 
       {/* Units */}
-      <Text style={styles.sectionTitle}>Units</Text>
-      <View style={styles.card}>
+      <Text style={sectionTitle}>Units</Text>
+      <View style={card}>
         <View style={styles.row}>
-          <Text style={styles.label}>Use miles instead of km</Text>
+          <Text style={[styles.label, { color: C.onSurface }]}>Use miles instead of km</Text>
           <Switch
             value={unit === 'imperial'}
             onValueChange={(v) => setUnit(v ? 'imperial' : 'metric')}
-            trackColor={{ true: Colors.primary, false: Colors.outline }}
-            thumbColor={Colors.onPrimary}
+            trackColor={{ true: C.primary, false: C.outline }}
+            thumbColor={C.onPrimary}
           />
         </View>
       </View>
 
+      {/* Notifications */}
+      <Text style={sectionTitle}>Notifications</Text>
+      <View style={card}>
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: C.onSurface }]}>Daily reminder</Text>
+          <Switch
+            value={reminderOn}
+            onValueChange={handleReminderToggle}
+            trackColor={{ true: C.primary, false: C.outline }}
+            thumbColor={C.onPrimary}
+          />
+        </View>
+        {reminderOn && (
+          <View style={styles.timeRow}>
+            <Text style={[styles.timeLabel, { color: C.onSurfaceVariant }]}>Remind me at</Text>
+            <TextInput
+              style={[styles.timeInput, { color: C.onSurface, borderBottomColor: C.primary }]}
+              value={reminderHour}
+              onChangeText={setReminderHour}
+              keyboardType="number-pad"
+              maxLength={2}
+              onBlur={handleReminderTimeChange}
+            />
+            <Text style={[styles.timeSep, { color: C.onSurface }]}>:</Text>
+            <TextInput
+              style={[styles.timeInput, { color: C.onSurface, borderBottomColor: C.primary }]}
+              value={reminderMin}
+              onChangeText={setReminderMin}
+              keyboardType="number-pad"
+              maxLength={2}
+              onBlur={handleReminderTimeChange}
+            />
+          </View>
+        )}
+      </View>
+
       {/* About */}
-      <Text style={styles.sectionTitle}>About</Text>
-      <View style={styles.card}>
-        <Text style={styles.aboutText}>Steps Counter v1.0</Text>
-        <Text style={styles.aboutSub}>
+      <Text style={sectionTitle}>About</Text>
+      <View style={card}>
+        <Text style={[styles.aboutText, { color: C.onSurface }]}>Steps Counter v1.0</Text>
+        <Text style={[styles.aboutSub, { color: C.onSurfaceVariant }]}>
           Your data stays on your device. No account required.
         </Text>
       </View>
@@ -92,64 +156,22 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1 },
   content: { paddingBottom: Spacing.xxl, paddingTop: Spacing.md },
-
-  sectionTitle: {
-    fontSize: FontSize.sm,
-    fontWeight: '700',
-    color: Colors.onSurfaceVariant,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.lg,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  card: {
-    backgroundColor: Colors.surfaceVariant,
-    marginHorizontal: Spacing.lg,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  label: { fontSize: FontSize.md, color: Colors.onSurface, flex: 1 },
-  input: {
-    flex: 1,
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.onSurface,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.primary,
-    paddingBottom: 4,
-    marginRight: Spacing.md,
-  },
-  saveBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  saveBtnText: { color: Colors.onPrimary, fontWeight: '700' },
-  presets: {
-    flexDirection: 'row',
-    marginTop: Spacing.md,
-    gap: Spacing.sm,
-  },
-  preset: {
-    flex: 1,
-    borderRadius: Radius.sm,
-    borderWidth: 1.5,
-    borderColor: Colors.outline,
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  presetActive: { backgroundColor: Colors.primaryContainer, borderColor: Colors.primary },
-  presetText: { fontSize: FontSize.sm, color: Colors.onSurfaceVariant },
-  presetTextActive: { color: Colors.primary, fontWeight: '700' },
-  aboutText: { fontSize: FontSize.md, color: Colors.onSurface, fontWeight: '600' },
-  aboutSub: { fontSize: FontSize.sm, color: Colors.onSurfaceVariant, marginTop: 4 },
+  sectionTitle: { fontSize: FontSize.sm, fontWeight: '700', paddingHorizontal: Spacing.lg, marginBottom: Spacing.xs, marginTop: Spacing.lg, textTransform: 'uppercase', letterSpacing: 0.8 },
+  card: { marginHorizontal: Spacing.lg, borderRadius: Radius.md, padding: Spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  label: { fontSize: FontSize.md, flex: 1 },
+  input: { flex: 1, fontSize: FontSize.lg, fontWeight: '700', borderBottomWidth: 2, paddingBottom: 4, marginRight: Spacing.md },
+  saveBtn: { borderRadius: Radius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
+  saveBtnText: { fontWeight: '700' },
+  presets: { flexDirection: 'row', marginTop: Spacing.md, gap: Spacing.sm },
+  preset: { flex: 1, borderRadius: Radius.sm, borderWidth: 1.5, alignItems: 'center', paddingVertical: Spacing.sm },
+  presetText: { fontSize: FontSize.sm },
+  timeRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.md, gap: Spacing.sm },
+  timeLabel: { fontSize: FontSize.sm, marginRight: Spacing.sm },
+  timeInput: { width: 40, fontSize: FontSize.lg, fontWeight: '700', borderBottomWidth: 2, textAlign: 'center', paddingBottom: 2 },
+  timeSep: { fontSize: FontSize.lg, fontWeight: '700' },
+  aboutText: { fontSize: FontSize.md, fontWeight: '600' },
+  aboutSub: { fontSize: FontSize.sm, marginTop: 4 },
 });
