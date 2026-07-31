@@ -1,27 +1,41 @@
 {
   "expo": {
-    "name": "StepsCounter",
+    "name": "Steps Counter",
     "slug": "StepsCounter",
     "version": "1.0.0",
     "scheme": "stepscounter",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFBFE"
+    },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.aniketshaw29.stepscounter",
       "infoPlist": {
-        "NSMotionUsageDescription": "StepsCounter needs motion access to count your steps."
+        "NSMotionUsageDescription": "Steps Counter uses your phone's motion sensor to count steps. Your data never leaves your device.",
+        "NSHealthShareUsageDescription": "Steps Counter reads your step data from Apple Health.",
+        "NSHealthUpdateUsageDescription": "Steps Counter writes your step data to Apple Health."
       }
     },
     "android": {
+      "package": "com.aniketshaw29.stepscounter",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#6750A4",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.ACTIVITY_RECOGNITION"]
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,7 +45,19 @@
       [
         "expo-router",
         { "root": "app" }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6750A4"
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "steps-counter-aniketshaw29"
+      }
+    }
   }
 }

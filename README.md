@@ -128,9 +128,31 @@ npm test
 | Phase | Status | What |
 |---|---|---|
 | Phase 1 | ✅ Done | Scaffold, live step counter, Today/History/Settings screens, 21 unit tests |
-| Phase 2 | 🔨 In progress | Streak badge, goal celebration, notifications, onboarding |
-| Phase 3 | 📋 Planned | Badges/achievements, dark mode, home screen widget |
-| Phase 4 | 📋 Planned | EAS Build → APK → Play Store |
+| Phase 2 | ✅ Done | Streak badge, goal celebration, notifications, onboarding |
+| Phase 3 | ✅ Done | Dark mode, achievements (12 badges), calendar heatmap, notification time picker |
+| Phase 4 | 🔨 In progress | EAS Build → APK install on device → Play Store |
+
+---
+
+## Build APK (install on your Android phone)
+
+No Android Studio needed — EAS builds in the cloud for free.
+
+```bash
+# 1. Install EAS CLI
+npm install -g eas-cli
+
+# 2. Login with your free Expo account (create one at expo.dev)
+eas login
+
+# 3. Build a preview APK (~5–10 minutes in Expo's cloud)
+eas build --platform android --profile preview
+
+# 4. EAS prints a download link when done
+#    Download the .apk → transfer to phone → install
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full free deployment plan.
 
 ---
 
@@ -139,11 +161,11 @@ npm test
 See [TESTING.md](TESTING.md) for device setup guide and [TESTING_STRATEGY.md](TESTING_STRATEGY.md) for the full test plan.
 
 ```bash
-npm test              # run unit tests
+npm test              # run all unit tests
 npm test -- --watch   # watch mode
 ```
 
-**21 unit tests** covering calculations, date helpers, and streak logic.
+**41 unit tests** — calculations, date helpers, Zustand store, and achievements logic.
 
 ---
 
