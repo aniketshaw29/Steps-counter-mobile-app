@@ -35,7 +35,9 @@
       "permissions": [
         "android.permission.ACTIVITY_RECOGNITION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.WRITE_STEPS"
       ]
     },
     "web": {
@@ -55,7 +57,9 @@
           "icon": "./assets/icon.png",
           "color": "#6750A4"
         }
-      ]
+      ],
+      "expo-sharing",
+      "react-native-health-connect"
     ],
     "extra": {
       "eas": {
