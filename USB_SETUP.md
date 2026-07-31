@@ -4,81 +4,87 @@
 
 | Item | Status |
 |---|---|
-| Mac (your laptop) | ✅ Already have |
-| Android phone (spare) | ✅ Already have |
-| USB cable (phone to Mac) | ✅ Already have |
-| ADB (Android Debug Bridge) | ❌ Need to install — guide below |
+| Mac (your laptop) | ✅ |
+| Android phone (spare) | ✅ |
+| USB cable (phone to Mac) | ✅ |
+| ADB (Android Debug Bridge) | ✅ Installed — see Step 1 |
 | Expo Go app on phone | Install from Play Store |
 
 ---
 
 ## Step 1 — Install ADB on your Mac
 
-ADB lets your Mac talk to your Android phone over USB. The easiest way is via Homebrew.
+> ✅ **Already done** — ADB v37.0.1 is installed at `~/platform-tools/adb`
 
-### Install Homebrew (if not already installed)
-Open **Terminal** on your Mac and run:
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+**Do NOT use `brew install android-platform-tools`** — the Homebrew cask has a stale checksum as of July 2026 and will fail with a checksum mismatch error.
 
-### Install ADB via Homebrew
-```bash
-brew install android-platform-tools
-```
+### Correct install method (what worked)
 
-### Verify it worked
 ```bash
+# 1. Download directly from Google
+curl -L "https://dl.google.com/android/repository/platform-tools-latest-darwin.zip" -o /tmp/platform-tools.zip
+
+# 2. Unzip (use -o flag to overwrite without prompting)
+unzip -o /tmp/platform-tools.zip -d ~/
+
+# 3. Add to PATH permanently
+echo 'export PATH="$HOME/platform-tools:$PATH"' >> ~/.zshrc && source ~/.zshrc
+
+# 4. Verify
 adb version
 ```
+
 Expected output:
 ```
 Android Debug Bridge version 1.0.41
+Version 37.0.1-15733141
+Installed as /Users/I528803/platform-tools/adb
 ```
+
+> **Note:** When running step 2, use `unzip -o` (overwrite flag) to avoid the interactive "replace file?" prompts.
 
 ---
 
 ## Step 2 — Enable Developer Mode on your Android Phone
 
-This is a one-time setup on the phone.
-
 1. Open **Settings** on your Android phone
 2. Scroll to **"About phone"** (sometimes under "General management")
 3. Find **"Build number"**
-4. **Tap it 7 times rapidly** — you'll see a countdown: "You are 3 steps away from being a developer"
-5. After the 7th tap: **"You are now a developer!"**
+4. **Tap it 7 times rapidly** — you'll see "You are now a developer!"
 
 ---
 
 ## Step 3 — Enable USB Debugging
 
-1. Go back to **Settings**
-2. You'll now see **"Developer options"** (may be under Settings → System → Developer options)
-3. Tap it, toggle the switch **ON** at the top
-4. Scroll down, find **"USB debugging"** → toggle it **ON**
-5. Confirm the warning dialog → **OK**
+1. Go to **Settings → Developer options** (now visible after Step 2)
+2. Toggle the switch **ON** at the top
+3. Find **"USB debugging"** → toggle it **ON**
+4. Confirm the warning → **OK**
 
 ---
 
-## Step 4 — Connect the Phone to your Mac
+## Step 4 — Connect Phone to Mac via USB
 
 1. Plug your Android phone into your Mac using the USB cable
-2. On your Android phone, a dialog appears:
-   **"Allow USB debugging?"**
+2. A dialog appears on the phone: **"Allow USB debugging?"**
 3. Check **"Always allow from this computer"**
 4. Tap **OK**
 
-### Verify the connection
-On your Mac terminal:
+### Verify connection
+
 ```bash
 adb devices
 ```
+
 Expected output:
 ```
 List of devices attached
-XXXXXXXXXXXXXXX    device
+KVFEBE5HHQIJCUMJ    device
 ```
-If it shows `unauthorized` instead of `device`, unlock your phone and re-accept the USB debugging dialog.
+
+> If it shows `unauthorized` instead of `device`: unlock your phone screen — the dialog re-appears. Tap "Always allow" → OK, then run `adb devices` again.
+
+**Your device serial: `KVFEBE5HHQIJCUMJ`** (confirmed working ✅)
 
 ---
 
@@ -92,85 +98,86 @@ If it shows `unauthorized` instead of `device`, unlock your phone and re-accept 
 
 ## Step 6 — Run the App
 
-On your Mac terminal:
 ```bash
 cd "/Users/I528803/Documents/2-personal/coding-stuff/Steps-counter-mobile-app"
 npx expo start
 ```
 
-When the dev server starts, press **`a`** in the terminal.
+When the dev server is running, **press `a`** in the terminal.
 
-Expo will automatically:
-1. Detect your connected Android device via ADB
-2. Open Expo Go on your phone
-3. Load the app
+Expo detects `KVFEBE5HHQIJCUMJ` via ADB, opens Expo Go on your phone, and loads the app.
 
-**The app will now appear on your phone!**
+```
+› Opening on Android device KVFEBE5HHQIJCUMJ...
+```
 
-Every time you save a file on your Mac → the app updates on your phone within 1–2 seconds (hot reload).
+**Hot reload:** every time you save a file on your Mac, the app updates on your phone within 1–2 seconds — no need to restart.
 
 ---
 
 ## Troubleshooting
 
-### "No devices found" after `adb devices`
-- Make sure USB debugging is enabled on the phone
+### `brew install android-platform-tools` fails with checksum error
+Use the direct download method in Step 1 instead. This is a known Homebrew issue as of July 2026.
+
+### `adb: command not found` after install
+The PATH wasn't reloaded. Run:
+```bash
+source ~/.zshrc
+```
+Or open a new terminal window.
+
+### `unauthorized` in `adb devices`
+- Unlock your phone screen — the USB debugging dialog re-appears
+- Tap **"Always allow from this computer"** → OK
+- Run `adb devices` again
+
+### `adb daemon` starts but no device listed
 - Try a different USB cable (some cables are charge-only, not data)
-- Unlock your phone screen and re-accept the debugging dialog
-- Try: `adb kill-server && adb start-server`
+- Try a different USB port on your Mac
+- Restart ADB: `adb kill-server && adb start-server`
 
-### "Unauthorized" in adb devices
-- Unlock your phone
-- A dialog should appear — tap "Always allow" then OK
-- If no dialog appears: Settings → Developer options → Revoke USB debugging authorizations → reconnect
-
-### App doesn't open automatically after pressing `a`
+### App doesn't open after pressing `a`
 - Make sure Expo Go is installed on the phone
-- Try pressing `a` again in the terminal
-- Or scan the QR code manually with Expo Go
+- Try pressing `a` again
+- Or scan the QR code manually in Expo Go
 
-### Hot reload not working
-- Press `r` in the terminal to force reload
-- If still stuck, shake the phone → tap "Reload"
-
-### "Connection refused" error in Expo Go
-- Make sure your Mac and phone are on the same WiFi (or use USB mode)
-- In Expo terminal, press `s` to switch to "Expo Go" connection type
-- Or run: `npx expo start --localhost` (forces USB/local connection)
+### Hot reload stopped working
+Press `r` in the terminal to force a full reload.
 
 ---
 
-## USB vs WiFi — Which to Use When
-
-| Mode | How to start | Best for |
-|---|---|---|
-| **USB (ADB)** | `npx expo start` then press `a` | Fastest, most reliable, step sensor testing |
-| **WiFi (QR code)** | `npx expo start` then scan QR in Expo Go | Quick daily coding when phone is nearby |
-| **Tunnel** | `npx expo start --tunnel` | Different networks, hotspot situations |
-
-For testing the step counter sensor, **USB is recommended** — more reliable than WiFi for sensor-heavy testing.
-
----
-
-## Quick Reference Commands
+## Quick Reference
 
 ```bash
 # Check phone is connected
 adb devices
 
-# Start Expo and open on Android (USB)
+# Start dev server and open on Android
 npx expo start
 # then press 'a'
 
-# Restart ADB if device not detected
+# Restart ADB daemon
 adb kill-server && adb start-server
 
-# See phone logs (useful for debugging)
-adb logcat | grep -i "expo\|stepscounter"
-
-# Check what's installed on the phone
-adb shell pm list packages | grep expo
-
-# Capture a screenshot from phone to Mac
+# Take a screenshot from phone → Mac
 adb exec-out screencap -p > screenshot.png
+
+# Watch live app logs
+adb logcat -s ReactNativeJS:V
+
+# Clear Expo Go app data (reset to fresh)
+adb shell pm clear host.exp.exponent
 ```
+
+---
+
+## USB vs WiFi vs Tunnel
+
+| Mode | Command | Best for |
+|---|---|---|
+| **USB (ADB)** | `npx expo start` → press `a` | Fastest, most reliable, sensor testing |
+| **WiFi (QR code)** | `npx expo start` → scan QR | Quick daily coding, no cable |
+| **Tunnel** | `npx expo start --tunnel` | Different networks, hotspot |
+
+For step sensor testing, **USB is recommended** — more reliable than WiFi.
