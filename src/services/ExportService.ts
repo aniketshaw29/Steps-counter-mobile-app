@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { getDb } from '../db/database';
 import { DailyRecord } from '../db/database';
@@ -19,16 +19,13 @@ export async function exportStepsCSV(): Promise<void> {
 
   const csv = recordsToCsv(records);
   const fileName = `steps_export_${new Date().toISOString().split('T')[0]}.csv`;
-  const filePath = `${FileSystem.documentDirectory}${fileName}`;
-
-  await FileSystem.writeAsStringAsync(filePath, csv, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
+  const file = new File(Paths.document, fileName);
+  file.write(csv);
 
   const canShare = await Sharing.isAvailableAsync();
   if (!canShare) throw new Error('Sharing is not available on this device');
 
-  await Sharing.shareAsync(filePath, {
+  await Sharing.shareAsync(file.uri, {
     mimeType: 'text/csv',
     dialogTitle: 'Export step data',
     UTI: 'public.comma-separated-values-text',

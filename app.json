@@ -7,11 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFBFE"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aniketshaw29.stepscounter",
@@ -59,7 +54,15 @@
         }
       ],
       "expo-sharing",
-      "react-native-health-connect"
+      "react-native-health-connect",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFBFE"
+        }
+      ]
     ],
     "extra": {
       "eas": {
