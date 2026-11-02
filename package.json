@@ -4,7 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
-    "expo": "~57.0.11",
+    "expo": "~58.0.22",
     "expo-background-fetch": "~57.0.8",
     "expo-constants": "~57.0.9",
     "expo-device": "~57.0.1",
